@@ -6,6 +6,17 @@ from PIL import ImageTk,Image
 import io
 import pandas as pd
 
+
+
+
+# Add some color
+# to the window
+# Very basic window.
+# Return values using
+# automatic-numbered keys
+
+
+
 def main(VCR,res):
 
         #VCR = input("Enter VCR: ")
@@ -45,6 +56,7 @@ def main(VCR,res):
         (capacitors, P, Q) = new_caps(VCR)
         weights_list = list()
         weights_list = terminal_weights(capacitors)
+        SPTT_All = list()
        # return weights_list
         # draw the circuit
         # draw_FSCC(capacitors)
@@ -52,14 +64,12 @@ def main(VCR,res):
         for (a, b,c) in zip(P,Q,capacitors):
             #(PP_, QQ_) = check_overlap(a, b, weights_list)
             #print(a,b,c)
-            (PP_, QQ_) = check_overlap(a, b,weights_list[str(c)] )        
-            P_set += PP_
-            Q_set += QQ_
-      
-        # multiply the output set by 2
-        Q_set = np.multiply(Q_set, 2)
-        # all transitions postive and negative
-        SPTT_All = Q_set + P_set
+            (PP_, QQ_) = check_overlap(a, b,weights_list[str(c)] )  
+            for i in range (len(PP_)):
+            	SPTT_All.append(PP_[i]+np.multiply(2,QQ_[i])  )
+
+              
+     
         # Now we need to sort each SPTT code per its VCR
         SPTT_VCR_CODE = defaultdict(list)
         for col in SPTT_All:
@@ -111,7 +121,7 @@ def main(VCR,res):
                 temp_VCR = str(calc_VCR(j, weights_list[str(len(j)-2)]))
                 if temp_VCR in VCR:
                     requested_SPTT[temp_VCR].append(j)
-            #return requested_SPTT
+            
         # if ivalid input the list will be empty
             #return requested_SPTT
             if len(requested_SPTT.keys()) == 0:
@@ -119,44 +129,27 @@ def main(VCR,res):
                 return 0
         # we have multiple VCRs
         # this will calaculte the dissimilarity between options
-        requested_SPTT = lengh_match(requested_SPTT)
-        #return requested_SPTT
-        #return requested_SPTT
-        #return requested_SPTT
+        requested_SPTT = flip_connection(lengh_match(requested_SPTT))
+ 
+
         mintrans_SPTT = dissimilarity(requested_SPTT)
-        #return  mintrans_SPTT
-           # mintrans_SPTT
-          #Selected_SPTT is the minmum transition matrix
-        #return mintrans_SPTT
+
         requested_SPTT = min_dissimilarity(mintrans_SPTT) 
-        #return requested_SPTT
         # the minmum transition doesn't include the VCR, thereofre, I'm recalculating it here.
         selected_VCR =  defaultdict(list)
         for i in requested_SPTT:
-         # print(i)
           three_count = (i == 3).sum()
-          temp_VCR = str(calc_VCR(i, weights_list[str(len(i)-three_count-2)],three_count))
+          temp_VCR = str(calc_VCR(i, np.flip(weights_list[str(len(i)-three_count-2)]),three_count))
           selected_VCR[temp_VCR].append(i)
 
-
-    
-
-        # we need to reverse the connection, otherwise people may get confused from which part of the circuit the input will be plugged. 
-        selected_VCR = flip_connection(selected_VCR)
-        # the output is the requested VCR by the user
-        # print(requested_SPTT)
-        
         #print ('\nNumber of capacitors needed: ' + str(capacitors) + '\n')
-
         # to order the gain in inc order :
         od = OrderedDict(sorted(selected_VCR.items(),key = lambda x: float(Fraction(x[0]))))
-        #return od 
         # Create dictionary for the order, reversed gains
 
         VCR_CODE = defaultdict(list)
 
         # I have used flip with v so I can reverse the order, where the input comes first
-
         for (k, v) in od.items():
             w = [("GND" if str(val) == '0' else val) for val in v[0] ]
             w = [("Vin" if str(val) == '1' else val) for val in w]
@@ -167,20 +160,36 @@ def main(VCR,res):
 
             VCR_CODE[str(round(float(Fraction(k)), 3))] = w
 
-        sptt_code = VCR_CODE   
-        VCR_set = list(sptt_code.keys())
-        designer_SPTT,SW_connection,SW_connection_x = desiner_code_generator(sptt_code,VCR_set)
-        # remove null connection
-        return designer_SPTT,SW_connection,SW_connection_x,capacitors
 
+        sptt_code = VCR_CODE  
+        VCR_set = list(sptt_code.keys())
+        capacitors.sort()
+     
+        
+         # topswitchies list 
+        top_sw = defaultdict(list)
+
+        for j,i in sptt_code.items():
+          three_count = i.count("X")
+          top_sw[three_count].append(i[three_count])
+          i[three_count] = "X"
+
+        designer_SPTT,SW_connection = desiner_code_generator(sptt_code,VCR_set)
+        # remove null connection
+        return sptt_code,SW_connection,capacitors
+        
 if __name__ == "__main__":
-    designer_SPTT,SW_connection,SW_connection_x,capacitors = main(["2","6"],1)
+    
+
+    designer_SPTT,SW_connection,capacitors = main(["2","6"],1)
+
+    # topswitchies list 
+    print(capacitors)
     caps = max(capacitors)
-    print(SW_connection_x)
     # now we create the dataframe (or excel sheet switching table)
     df = pd.DataFrame(designer_SPTT)
     df.to_excel("switching_table.xlsx")
     # draw the circuit
-    d = draw_fib(caps,SW_connection,designer_SPTT)
+    d = draw_fib(caps,SW_connection)
     d.draw()
     d.save('my_circuit.svg')

@@ -1,7 +1,7 @@
 import schemdraw
 import schemdraw.elements as elm
 
-def draw_fib(caps,SW_connection,designer_SPTT):
+def draw_fib(caps,SW_connection):
     print(SW_connection)
     sw_count  = 1
     # fibunatchi circuit 

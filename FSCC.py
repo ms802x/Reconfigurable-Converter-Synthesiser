@@ -3,9 +3,9 @@ from scipy.spatial import distance
 import itertools
 from collections import defaultdict
 from collections import OrderedDict
-#from FSCC_draw import draw_FSCC
 import numpy as np
 import sys
+
 
 # Step (0): find required resoultion
 
@@ -381,9 +381,7 @@ def dissimilarity(SPTT_VCR_CODE):
         for w in SPTT_VCR_CODE[all_VCR[j]]:
           D = distance.hamming(k,w)
 
-         # print(k,w,D)
-
-          if (min_D > D):
+          if (min_D >= D):
             min_D = D
             temp_array = w[:]
         #print(k,w,D,temp_array)
@@ -467,12 +465,13 @@ def min_dissimilarity(mintrans_SPTT):
 def flip_connection(connections):
   flip_connection_dic = connections.copy()
   for k,c in flip_connection_dic.items():
-    ind = max(dup_indices(c[0],3),default=None)
-    l = c[0][:ind:-1]
-    if(ind != None):
-      flip_connection_dic[k][0][ind+1:]=l
-    else:
-      flip_connection_dic[k][0][:]=l
+    for j in range(len(c)):
+      ind = max(dup_indices(c[j],3),default=None)
+      l = c[j][:ind:-1]
+      if(ind != None):
+        flip_connection_dic[k][j][ind+1:]=l
+      else:
+        flip_connection_dic[k][j][:]=l
 
   return flip_connection_dic
 
@@ -488,21 +487,7 @@ def desiner_code_generator(SPTT,VCR_set):
     SPTT1 = [i for i in SPTT.values()]
     SPTT1 = [i  for i in SPTT1 if len(i)>0]
     row_col = [list(i) for i in zip(*SPTT1)]
-    """
-    #temperoray list 
-    temp = list()
-    try:
-      for k in range(len(SPTT1)):
-        # to avoid empty sets
-        for i in SPTT1:
-          temp.append(i[k])
-        row_col.append(temp)
-        temp = list()
-      return row_col 
-    except:
-      print(i)
-      return 0
-      """
+
     # generate the unique values from the converted list  
     temp = list()
     SW_connection = list()
@@ -518,7 +503,6 @@ def desiner_code_generator(SPTT,VCR_set):
     designer_SPTT["SW/G"] = VCR_set
 
     SW_init = 1
-    SW_connection_x = SW_connection
     SW_connection = [ list(set(i) - set(['X'])) if 'X' in i else i for i in SW_connection]
     for a,b in zip(row_col,SW_connection):
       if (len(set(a))==1):
@@ -530,4 +514,4 @@ def desiner_code_generator(SPTT,VCR_set):
 
         SW_init+=1
       
-    return designer_SPTT,SW_connection,SW_connection_x
+    return designer_SPTT,SW_connection
