@@ -98,7 +98,23 @@ def main(VCR,res):
         # remove vout duplicates
         # and remove any connection Vin at the second terminal 
             all_codes = SPTT_VCR_CODE
-            SPTT_VCR_CODE = remove_twophase_dup(SPTT_VCR_CODE)
+
+            # to remove any redundant connection
+            sptt= defaultdict(list)
+
+            for k,v in all_codes.items():
+                try: 
+                   size = len(min(v, key=len))
+                except: 
+                    size =-1
+                for i in v :
+                    if(len(i)==size):
+                        sptt[k].append(i)
+
+
+
+
+            SPTT_VCR_CODE = remove_twophase_dup(sptt)
             # The purpose of this to append all the connections which have overlapping connections although there Rout will be calaculated. 
             for VCR_code in all_codes.keys():
               if (VCR_code in SPTT_VCR_CODE):
@@ -165,31 +181,34 @@ def main(VCR,res):
         VCR_set = list(sptt_code.keys())
         capacitors.sort()
      
-        
          # topswitchies list 
         top_sw = defaultdict(list)
+        designer_SPTT,SW_connection,SW_init = desiner_code_generator(sptt_code,VCR_set)
 
         for j,i in sptt_code.items():
           three_count = i.count("X")
           top_sw[three_count].append(i[three_count])
           i[three_count] = "X"
 
-        designer_SPTT,SW_connection = desiner_code_generator(sptt_code,VCR_set)
+          #s_temp = ["ON" if i==three_count else "OFF" for i in top_sw.keys() ]
+          #designer_SPTT["S"+str(SW_init)] = s_temp
+
+#        designer_SPTT,SW_connection = desiner_code_generator(sptt_code,VCR_set)
         # remove null connection
-        return sptt_code,SW_connection,capacitors
+        return designer_SPTT,SW_connection,capacitors,top_sw,SW_init
         
 if __name__ == "__main__":
     
 
-    designer_SPTT,SW_connection,capacitors = main(["2","6"],1)
+    designer_SPTT,SW_connection,capacitors,top_sw,SW_init= main(["2","2.5"],0.5)
 
-    # topswitchies list 
-    print(capacitors)
+    #print(top_sw)
+    #print(designer_SPTT)
     caps = max(capacitors)
     # now we create the dataframe (or excel sheet switching table)
     df = pd.DataFrame(designer_SPTT)
     df.to_excel("switching_table.xlsx")
     # draw the circuit
-    d = draw_fib(caps,SW_connection)
+    d = draw_fib(caps,SW_connection,top_sw,SW_init)
     d.draw()
     d.save('my_circuit.svg')

@@ -484,10 +484,17 @@ def desiner_code_generator(SPTT,VCR_set):
     #This part we are trying to generate ON/OFF switch state from VOUT,Vin,GND parameter 
     # convert row to coulmn
     # create list out of the dict and
+    designer_SPTT,top_sw,top_gear= defaultdict(list),defaultdict(list),defaultdict(list)
+    for j,i in SPTT.items():
+      three_count = i.count("X")
+      top_sw[three_count].append(i[three_count])
+      if (three_count>0):
+        top_gear[j].append(i[three_count])
+        i[three_count] = "X"
+
     SPTT1 = [i for i in SPTT.values()]
     SPTT1 = [i  for i in SPTT1 if len(i)>0]
     row_col = [list(i) for i in zip(*SPTT1)]
-
     # generate the unique values from the converted list  
     temp = list()
     SW_connection = list()
@@ -498,7 +505,6 @@ def desiner_code_generator(SPTT,VCR_set):
       temp = list()
     
     #This part generate the SW_states for the designer 
-    designer_SPTT = defaultdict(list)
 
     designer_SPTT["SW/G"] = VCR_set
 
@@ -511,7 +517,22 @@ def desiner_code_generator(SPTT,VCR_set):
       for port in b :
         s_temp = ["ON" if i==port else "OFF" for i in a ]
         designer_SPTT["S"+str(SW_init)] = s_temp
-
         SW_init+=1
-      
-    return designer_SPTT,SW_connection
+  
+
+
+
+    
+    temp_SW_init = SW_init
+    for key,value in top_sw.items():
+      sw_v= list(set(value))
+      for i in sw_v:
+        print(sw_v)
+        s_temp = ["ON" if (len(top_gear[k])>0 and i==top_gear[k][0] and v.count("X")==key) else "OFF" for k,v in SPTT.items()]
+        if("ON" in s_temp):
+          designer_SPTT["S"+str(SW_init)] = s_temp
+          SW_init+=1    
+
+    return designer_SPTT,SW_connection,temp_SW_init
+
+
