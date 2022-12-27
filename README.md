@@ -13,3 +13,8 @@ python main.py
 * Circuit Diagram 
 
 
+# Upcoming 
+- User Interface 
+
+# Issues 
+- the code still contain many bugs to be fixed. 
